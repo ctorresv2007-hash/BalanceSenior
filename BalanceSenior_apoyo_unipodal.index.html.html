@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="manifest.webmanifest">
+<title>BalanceSenior — Evaluación de equilibrio</title>
+<style>
+:root{--bg:#f4f7f8;--card:#fff;--ink:#16302b;--muted:#61736e;--accent:#0f766e;--accent2:#115e59;--warn:#d97706;--danger:#dc2626;--ok:#15803d;--line:#dbe5e2}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,#0f766e,#115e59);color:#fff;padding:22px 18px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:1.35rem} header p{margin:5px 0 0;opacity:.88;font-size:.9rem}
+nav{display:flex;gap:8px;overflow:auto;padding:10px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:83px;z-index:4}
+nav button{border:0;background:#eef5f3;color:#164e49;border-radius:999px;padding:9px 13px;white-space:nowrap;font-weight:700}
+nav button.active{background:var(--accent);color:#fff}
+main{max-width:1100px;margin:auto;padding:16px}.tab{display:none}.tab.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 4px 14px #17352a0d}
+.card h2,.card h3{margin:0 0 10px}.muted{color:var(--muted);font-size:.9rem}
+label{display:block;font-weight:700;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #cbd8d5;border-radius:10px;background:#fff;font:inherit}
+button.primary,button.action{border:0;border-radius:11px;padding:11px 15px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer}
+button.secondary{border:1px solid var(--line);border-radius:11px;padding:10px 14px;background:#fff;color:var(--ink);font-weight:700}
+button.danger{background:var(--danger);color:#fff;border:0;border-radius:10px;padding:10px 12px}
+.metric{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:10px 0}.metric:last-child{border:0}
+.badge{padding:5px 9px;border-radius:999px;font-weight:800;font-size:.78rem}.ok{background:#dcfce7;color:#166534}.warn{background:#fef3c7;color:#92400e}.danger{background:#fee2e2;color:#991b1b}.neutral{background:#e8efed;color:#48625c}
+.big{font-size:2.1rem;font-weight:900}.bar{height:10px;background:#e6efec;border-radius:99px;overflow:hidden}.fill{height:100%;background:var(--accent);width:0}
+video,canvas{width:100%;border-radius:14px;background:#0b1513;display:block} .video-wrap{position:relative}.video-wrap canvas{position:absolute;left:0;top:0;height:100%;object-fit:contain;pointer-events:none}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.small{font-size:.8rem}
+table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left}th{font-size:.82rem;color:var(--muted)}
+.notice{padding:12px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;margin-bottom:12px}
+details{border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0;background:#fff}summary{font-weight:800;cursor:pointer}
+.score-row{display:grid;grid-template-columns:1fr 80px 100px;gap:8px;align-items:center;margin:7px 0}
+footer{padding:30px 16px;text-align:center;color:var(--muted);font-size:.8rem}
+@media(max-width:600px){main{padding:10px}.score-row{grid-template-columns:1fr 70px 90px}.big{font-size:1.7rem}}
+</style>
+</head>
+<body>
+<header><h1>🧓 BalanceSenior</h1><p>Dashboard interactivo para equilibrio, estabilidad, movilidad y riesgo de caídas</p></header>
+<nav id="nav">
+<button class="active" data-tab="inicio">Resumen</button><button data-tab="video">Análisis multimedia</button>
+<button data-tab="unipodal">Apoyo unipodal</button><button data-tab="funcional">Pruebas funcionales</button><button data-tab="berg">Berg</button><button data-tab="poma">POMA / Tinetti</button><button data-tab="informe">Informe</button>
+</nav>
+<main>
+<section id="inicio" class="tab active">
+<div class="notice"><b>Uso clínico:</b> herramienta de apoyo educativo y de cribado. No reemplaza la evaluación de un kinesiólogo/profesional de salud ni establece un diagnóstico.</div>
+<div class="grid">
+<div class="card"><h2>Paciente</h2><label>Nombre / ID</label><input id="pid" placeholder="Ej. Paciente 001"><label>Edad</label><input id="age" type="number" min="50" max="120" value="70"><label>Observaciones</label><textarea id="obs" rows="3" placeholder="Ayuda técnica, antecedentes relevantes, etc."></textarea></div>
+<div class="card"><h2>Panel rápido</h2><div class="metric"><span>TUG</span><span id="dashTug" class="badge neutral">Sin dato</span></div><div class="metric"><span>5x Sit-to-Stand</span><span id="dashSts" class="badge neutral">Sin dato</span></div><div class="metric"><span>Berg</span><span id="dashBerg" class="badge neutral">Sin dato</span></div><div class="metric"><span>POMA</span><span id="dashPoma" class="badge neutral">Sin dato</span></div></div>
+<div class="card"><h2>Semáforo global</h2><div id="globalRisk" class="big">—</div><p id="globalText" class="muted">Ingresa al menos una prueba para obtener una lectura orientativa.</p><div class="bar"><div id="globalBar" class="fill"></div></div></div>
+</div>
+</section>
+
+<section id="video" class="tab">
+<div class="grid">
+<div class="card"><h2>🎥 Análisis de video</h2><p class="muted">Carga un MP4/WebM/MOV. El módulo experimental usa MediaPipe Pose en el navegador para estimar puntos articulares visibles.</p>
+<input id="videoFile" type="file" accept="video/*">
+<div class="video-wrap" style="margin-top:10px"><video id="vid" controls playsinline></video><canvas id="overlay"></canvas></div>
+<div class="controls"><button class="primary" id="analyzeBtn">Iniciar análisis</button><button class="secondary" id="stopBtn">Detener</button></div>
+<p id="poseStatus" class="muted">Esperando video…</p></div>
+<div class="card"><h2>📐 Variables estimadas</h2>
+<div class="metric"><span>Rodilla izquierda</span><b id="lk">—°</b></div><div class="metric"><span>Rodilla derecha</span><b id="rk">—°</b></div>
+<div class="metric"><span>Cadera izquierda</span><b id="lh">—°</b></div><div class="metric"><span>Cadera derecha</span><b id="rh">—°</b></div>
+<div class="metric"><span>Codo izquierdo</span><b id="le">—°</b></div><div class="metric"><span>Codo derecho</span><b id="re">—°</b></div>
+<div class="metric"><span>Hombro izquierdo</span><b id="ls">—°</b></div><div class="metric"><span>Hombro derecho</span><b id="rs">—°</b></div>
+<div class="metric"><span>Balance de tronco (proxy)</span><b id="sway">—</b></div>
+<p class="small muted">Los ángulos son aproximaciones 2D y dependen del plano de cámara, oclusiones y calidad del video. No interpretar como goniometría clínica.</p>
+</div>
+</div>
+</section>
+
+
+<section id="unipodal" class="tab">
+ <div class="grid">
+  <div class="card">
+   <h2>🦶 Evaluación de apoyo unipodal</h2>
+   <p class="muted">Carga un video de la prueba para revisarlo y registra el tiempo observado y las compensaciones. Este módulo no determina automáticamente el equilibrio a partir de los píxeles del video.</p>
+   <label for="uniFile">Archivo multimedia (video)</label>
+   <input id="uniFile" type="file" accept="video/*">
+   <div style="margin-top:10px"><video id="uniVid" controls playsinline></video></div>
+   <p id="uniMediaStatus" class="muted">Esperando un video…</p>
+   <p class="small muted">Sugerencia de grabación: cuerpo completo visible, cámara fija, buena iluminación y vista frontal o lateral. Asegura supervisión cercana y apoyo estable al alcance, especialmente en personas mayores.</p>
+  </div>
+  <div class="card">
+   <h2>📝 Registro de la prueba</h2>
+   <label for="uniSide">Lado evaluado</label>
+   <select id="uniSide"><option value="Derecho">Derecho</option><option value="Izquierdo">Izquierdo</option></select>
+   <label for="uniTime">Tiempo mantenido (segundos)</label>
+   <input id="uniTime" type="number" min="0" step="0.1" placeholder="Ej. 8.5">
+   <label for="uniAttempts">Número de intentos</label>
+   <input id="uniAttempts" type="number" min="1" step="1" value="1">
+   <label for="uniComp">Observaciones durante el apoyo</label>
+   <select id="uniComp" multiple size="5">
+    <option value="Uso de brazos para equilibrarse">Uso de brazos para equilibrarse</option>
+    <option value="Balanceo marcado del tronco">Balanceo marcado del tronco</option>
+    <option value="Pie de apoyo se desplaza">Pie de apoyo se desplaza</option>
+    <option value="Pie elevado toca el suelo">Pie elevado toca el suelo</option>
+    <option value="Necesita apoyo externo">Necesita apoyo externo</option>
+   </select>
+   <label for="uniNotes">Notas clínicas / técnicas</label>
+   <textarea id="uniNotes" rows="3" placeholder="Calzado, uso de ayuda, instrucciones, motivo de término…"></textarea>
+   <div class="controls"><button class="primary" id="uniSave">Calcular lectura orientativa</button><button class="secondary" id="uniReset">Limpiar registro</button></div>
+  </div>
+ </div>
+ <div class="card" style="margin-top:14px">
+  <h2>Resultado de apoyo unipodal</h2>
+  <div class="metric"><span>Tiempo registrado</span><b id="uniOutTime">—</b></div>
+  <div class="metric"><span>Lado</span><b id="uniOutSide">—</b></div>
+  <div class="metric"><span>Lectura orientativa</span><span id="uniResult" class="badge neutral">Sin datos</span></div>
+  <p id="uniInterpretation" class="muted">Carga el video, revisa la ejecución y registra el tiempo observado para generar un resumen.</p>
+  <p class="small muted">El resultado es descriptivo y no constituye diagnóstico ni una estimación validada del riesgo de caídas. El tiempo depende del protocolo, edad, instrucciones y condiciones de seguridad. Detén la prueba ante dolor, mareo o inestabilidad; no la realices sin supervisión si existe riesgo de caída.</p>
+ </div>
+</section>
+
+<section id="funcional" class="tab">
+<div class="grid">
+<div class="card"><h2>Timed Up and Go (TUG)</h2><p class="muted">Levantarse, caminar 3 m, girar, volver y sentarse.</p><label>Tiempo (s)</label><input id="tug" type="number" step=".1" min="0" placeholder="Ej. 10.8"><div id="tugResult" class="metric"><span>Resultado</span><span class="badge neutral">Sin dato</span></div><p class="small">Referencia de cribado: ≥12 s = mayor riesgo de caída.</p></div>
+<div class="card"><h2>Five Times Sit-to-Stand</h2><p class="muted">5 repeticiones desde una silla, según protocolo estandarizado.</p><label>Tiempo (s)</label><input id="sts" type="number" step=".1" min="0" placeholder="Ej. 13.5"><div id="stsResult" class="metric"><span>Resultado</span><span class="badge neutral">Sin dato</span></div><p class="small">Un punto de corte frecuente es >15 s; la interpretación debe considerar edad, sexo y contexto.</p></div>
+</div>
+<div class="card" style="margin-top:14px"><h2>Observaciones funcionales</h2><div class="grid">
+<label><input type="checkbox" class="obscheck" value="Pérdida de equilibrio"> Pérdida de equilibrio</label>
+<label><input type="checkbox" class="obscheck" value="Pasos cortos"> Pasos cortos</label>
+<label><input type="checkbox" class="obscheck" value="Arrastre de pies"> Arrastre de pies</label>
+<label><input type="checkbox" class="obscheck" value="Sway de tronco"> Sway de tronco</label>
+<label><input type="checkbox" class="obscheck" value="Dificultad para girar"> Dificultad para girar</label>
+<label><input type="checkbox" class="obscheck" value="Uso inseguro de ayuda técnica"> Uso inseguro de ayuda técnica</label>
+</div></div>
+</section>
+
+<section id="berg" class="tab"><div class="card"><h2>Escala de Equilibrio de Berg</h2><p class="muted">14 ítems, 0–4 puntos cada uno. Máximo 56.</p><div id="bergItems"></div><div class="metric"><b>Total Berg</b><span id="bergTotal" class="big">0/56</span></div><div id="bergRisk" class="metric"><span>Interpretación</span><span class="badge neutral">Sin datos</span></div></div></section>
+
+<section id="poma" class="tab"><div class="card"><h2>POMA / Tinetti</h2><p class="muted">Balance + marcha = 28 puntos. Cada ítem se puntúa según el protocolo utilizado.</p><h3>Balance (16 puntos)</h3><div id="pomaBal"></div><h3>Marcha (12 puntos)</h3><div id="pomaGait"></div><div class="metric"><b>Total POMA</b><span id="pomaTotal" class="big">0/28</span></div><div id="pomaRisk" class="metric"><span>Interpretación</span><span class="badge neutral">Sin datos</span></div></div></section>
+
+<section id="informe" class="tab"><div class="card"><h2>📋 Informe resumido</h2><div id="report"></div><button class="primary" onclick="window.print()">Imprimir / Guardar PDF</button></div></section>
+</main>
+<footer>BalanceSenior • Prototipo educativo de apoyo a evaluación kinésica • Verifica siempre el protocolo institucional y la versión validada de cada escala.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const state={video:false,angles:{},sway:[]};
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='informe')buildReport();});
+
+function badge(text,kind){return `<span class="badge ${kind}">${text}</span>`}
+function classifyTime(v,cut,unit='s'){if(!Number.isFinite(v))return ['Sin dato','neutral'];return v<cut?['Normal / menor riesgo','ok']:v<cut*1.25?['Atención','warn']:['Alerta','danger'];}
+function updateFunctional(){
+ const t=parseFloat($('tug').value), s=parseFloat($('sts').value);
+ let [tt,tk]=classifyTime(t,12), [st,sk]=classifyTime(s,15);
+ $('tugResult').innerHTML=`<span>Resultado</span>${badge(tt,tk)}`; $('stsResult').innerHTML=`<span>Resultado</span>${badge(st,sk)}`;
+ $('dashTug').textContent=Number.isFinite(t)?t.toFixed(1)+' s':'Sin dato';$('dashTug').className='badge '+tk;
+ $('dashSts').textContent=Number.isFinite(s)?s.toFixed(1)+' s':'Sin dato';$('dashSts').className='badge '+sk;updateGlobal();
+}
+$('tug').oninput=updateFunctional;$('sts').oninput=updateFunctional;
+
+const bergNames=[
+'Sentarse a pararse','Pararse sin apoyo','Sentarse sin apoyo','Transferencias','Pararse con ojos cerrados',
+'Pararse con pies juntos','Alcanzar hacia delante','Recoger objeto del suelo','Mirar hacia atrás',
+'Giro de 360°','Alternar pies sobre escalón','Pararse con un pie delante del otro','Pararse sobre un pie','Mantenerse de pie'
+];
+const berg=$('bergItems'); bergNames.forEach((n,i)=>{berg.innerHTML+=`<div class="score-row"><span>${i+1}. ${n}</span><select class="bergSel"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option></select><span class="muted">0–4</span></div>`});
+document.querySelectorAll('.bergSel').forEach(x=>x.onchange=updateBerg);
+function updateBerg(){let total=[...document.querySelectorAll('.bergSel')].reduce((a,x)=>a+Number(x.value),0);$('bergTotal').textContent=total+'/56';let text,kind;if(total<40){text='Alerta alta';kind='danger'}else if(total<45){text='Riesgo aumentado';kind='warn'}else if(total<51){text='Vigilar / contextualizar';kind='warn'}else{text='Mejor desempeño funcional';kind='ok'}$('bergRisk').innerHTML=`<span>Interpretación</span>${badge(text,kind)}`;$('dashBerg').textContent=total+'/56';$('dashBerg').className='badge '+kind;updateGlobal();}
+
+const bal=[
+['Equilibrio sentado','0–1',1],['Levantarse de la silla','0–2',2],['Intentos para levantarse','0–2',2],
+['Equilibrio inmediato de pie','0–2',2],['Equilibrio de pie','0–2',2],['Empuje suave / nudge','0–2',2],
+['Ojos cerrados','0–1',1],['Giro de 360°','0–2',2],['Sentarse','0–1',1]];
+const gait=[['Inicio de marcha','0–1',1],['Longitud/altura del paso','0–2',2],['Simetría del paso','0–1',1],['Continuidad','0–1',1],['Trayectoria','0–2',2],['Tronco','0–2',2],['Base de sustentación','0–1',1]];
+function makePoma(arr,id){$(id).innerHTML=arr.map((x,i)=>`<div class="score-row"><span>${i+1}. ${x[0]}</span><select class="pomaSel" data-max="${x[2]}">${Array.from({length:x[2]+1},(_,v)=>`<option value="${v}" ${v===x[2]?'selected':''}>${v}</option>`).join('')}</select><span class="muted">máx ${x[2]}</span></div>`).join('');}
+makePoma(bal,'pomaBal');makePoma(gait,'pomaGait');document.querySelectorAll('.pomaSel').forEach(x=>x.onchange=updatePoma);
+function updatePoma(){let total=[...document.querySelectorAll('.pomaSel')].reduce((a,x)=>a+Number(x.value),0);$('pomaTotal').textContent=total+'/28';let text,kind;if(total<=18){text='Alto riesgo';kind='danger'}else if(total<=23){text='Riesgo moderado';kind='warn'}else{text='Bajo riesgo';kind='ok'}$('pomaRisk').innerHTML=`<span>Interpretación</span>${badge(text,kind)}`;$('dashPoma').textContent=total+'/28';$('dashPoma').className='badge '+kind;updateGlobal();}
+function updateGlobal(){let risks=[];[['tug',12],['sts',15]].forEach(([id,c])=>{let v=parseFloat($(id).value);if(Number.isFinite(v))risks.push(v>=c?2:0)});let b=[...document.querySelectorAll('.bergSel')].reduce((a,x)=>a+Number(x.value),0);if(b)risks.push(b<45?2:b<51?1:0);let p=[...document.querySelectorAll('.pomaSel')].reduce((a,x)=>a+Number(x.value),0);if(p)risks.push(p<=18?2:p<=23?1:0);let score=risks.reduce((a,b)=>a+b,0);let label=score>=4?'ALERTA':score>=2?'ATENCIÓN':'ESTABLE';$('globalRisk').textContent=label;$('globalBar').style.width=Math.min(100,score/8*100)+'%';$('globalText').textContent=risks.length?'Lectura orientativa basada en las pruebas ingresadas. No equivale a diagnóstico.':'Ingresa pruebas para obtener una lectura orientativa.';}
+
+const file=$('videoFile'), vid=$('vid'), canvas=$('overlay'),ctx=canvas.getContext('2d');let pose=null,running=false;
+file.onchange=()=>{const f=file.files[0];if(!f)return;vid.src=URL.createObjectURL(f);$('poseStatus').textContent='Video cargado. Presiona Iniciar análisis.';};
+function angle(a,b,c){if(!a||!b||!c)return null;const ab=[a.x-b.x,a.y-b.y],cb=[c.x-b.x,c.y-b.y];const dot=ab[0]*cb[0]+ab[1]*cb[1],den=Math.hypot(...ab)*Math.hypot(...cb);return den?Math.acos(Math.max(-1,Math.min(1,dot/den)))*180/Math.PI:null}
+function setAngle(id,v){$(id).textContent=v==null?'—°':v.toFixed(1)+'°'}
+function drawPose(res){canvas.width=vid.videoWidth||640;canvas.height=vid.videoHeight||360;ctx.clearRect(0,0,canvas.width,canvas.height);if(res.poseLandmarks){drawConnectors(ctx,res.poseLandmarks,POSE_CONNECTIONS,{color:'#35d0b0',lineWidth:3});drawLandmarks(ctx,res.poseLandmarks,{color:'#fff',lineWidth:1,radius:4});}}
+async function analyze(){if(!vid.src){$('poseStatus').textContent='Carga primero un video.';return} if(!pose){pose=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`});pose.setOptions({modelComplexity:1,smoothLandmarks:true,minDetectionConfidence:.5,minTrackingConfidence:.5});pose.onResults(res=>{drawPose(res);const p=res.poseLandmarks;if(!p)return;const L=(i)=>p[i];setAngle('lk',angle(L(23),L(25),L(27)));setAngle('rk',angle(L(24),L(26),L(28)));setAngle('lh',angle(L(11),L(23),L(25)));setAngle('rh',angle(L(12),L(24),L(26)));setAngle('le',angle(L(11),L(13),L(15)));setAngle('re',angle(L(12),L(14),L(16)));setAngle('ls',angle(L(23),L(11),L(13)));setAngle('rs',angle(L(24),L(12),L(14)));const cx=(L(23).x+L(24).x)/2,cy=(L(23).y+L(24).y)/2;state.sway.push([cx,cy]);if(state.sway.length>90)state.sway.shift();if(state.sway.length>10){const xs=state.sway.map(x=>x[0]),ys=state.sway.map(x=>x[1]);const range=(a)=>Math.max(...a)-Math.min(...a);$('sway').textContent=(range(xs)*100).toFixed(1)+'% X / '+(range(ys)*100).toFixed(1)+'% Y';}})}
+running=true;vid.play();$('poseStatus').textContent='Analizando… mantén al sujeto visible y de cuerpo completo.';loop();}
+async function loop(){if(!running)return;if(vid.paused||vid.ended){running=false;$('poseStatus').textContent='Análisis detenido/pausado.';return}await pose.send({image:vid});requestAnimationFrame(loop)}
+$('analyzeBtn').onclick=analyze;$('stopBtn').onclick=()=>{running=false;vid.pause();$('poseStatus').textContent='Análisis detenido.'};
+
+function buildReport(){const name=$('pid').value||'Sin identificar',age=$('age').value||'—';const t=parseFloat($('tug').value),s=parseFloat($('sts').value),b=[...document.querySelectorAll('.bergSel')].reduce((a,x)=>a+Number(x.value),0),p=[...document.querySelectorAll('.pomaSel')].reduce((a,x)=>a+Number(x.value),0);const checks=[...document.querySelectorAll('.obscheck:checked')].map(x=>x.value);$('report').innerHTML=`<h3>${name} · ${age} años</h3><table><tr><th>Prueba</th><th>Valor</th><th>Lectura orientativa</th></tr><tr><td>TUG</td><td>${Number.isFinite(t)?t.toFixed(1)+' s':'—'}</td><td>${Number.isFinite(t)?(t>=12?'≥12 s: alerta de riesgo':'<12 s: menor riesgo'):'—'}</td></tr><tr><td>5x Sit-to-Stand</td><td>${Number.isFinite(s)?s.toFixed(1)+' s':'—'}</td><td>${Number.isFinite(s)?(s>15?'>15 s: alerta':'≤15 s: menor riesgo'):'—'}</td></tr><tr><td>Berg</td><td>${b}/56</td><td>${b<45?'Mayor riesgo':b<51?'Vigilar':'Mejor desempeño'}</td></tr><tr><td>POMA</td><td>${p}/28</td><td>${p<=18?'Alto riesgo':p<=23?'Moderado':'Bajo'}</td></tr></table><h3>Apoyo unipodal</h3><p>${state.uniReport||'Sin registro de apoyo unipodal.'}</p><h3>Observaciones</h3><p>${checks.length?checks.join(' · '):'Sin observaciones marcadas.'}</p><h3>Nota</h3><p class="muted">Interpretación orientativa. Los puntos de corte pueden variar según población, protocolo y contexto clínico.</p>`}
+
+// Evaluación de apoyo unipodal basada en revisión del archivo y registro del evaluador.
+const uniFile=$('uniFile'), uniVid=$('uniVid');
+uniFile.onchange=()=>{
+ const f=uniFile.files && uniFile.files[0];
+ if(!f)return;
+ if(uniVid.dataset.objectUrl) URL.revokeObjectURL(uniVid.dataset.objectUrl);
+ const url=URL.createObjectURL(f); uniVid.src=url; uniVid.dataset.objectUrl=url;
+ $('uniMediaStatus').textContent='Video cargado: '+f.name+'. Revisa el clip y registra el tiempo observado.';
+};
+$('uniSave').onclick=()=>{
+ const t=parseFloat($('uniTime').value), side=$('uniSide').value;
+ if(!Number.isFinite(t)||t<0){$('uniInterpretation').textContent='Ingresa un tiempo válido observado en el video.';return;}
+ const comps=[...$('uniComp').selectedOptions].map(o=>o.value);
+ let text='Tiempo registrado; interpretar según protocolo y contexto.',kind='neutral';
+ if(t<5){text='Tiempo breve registrado; conviene revisar la ejecución y el contexto clínico.';kind='warn';}
+ else if(t>=5){text='Tiempo registrado de 5 s o más; no descarta por sí solo alteraciones del equilibrio.';kind='ok';}
+ if(comps.includes('Necesita apoyo externo')||comps.includes('Pie elevado toca el suelo')||comps.includes('Pie de apoyo se desplaza')){
+  text+=' Se registró pérdida de la posición o necesidad de apoyo durante la prueba.';kind='warn';
+ }
+ $('uniOutTime').textContent=t.toFixed(1)+' s';$('uniOutSide').textContent=side;
+ $('uniResult').textContent=kind==='warn'?'Revisar ejecución':'Registro completado';
+ $('uniResult').className='badge '+kind;
+ $('uniInterpretation').textContent=text+(comps.length?' Observaciones: '+comps.join('; ')+'.':'')+
+  ($('uniNotes').value.trim()?' Notas: '+$('uniNotes').value.trim(): '');
+ state.uniReport=side+': '+t.toFixed(1)+' s. '+text+(comps.length?' Observaciones: '+comps.join('; ')+'.':'')+($('uniNotes').value.trim()?' Notas: '+$('uniNotes').value.trim()+'.':'');
+};
+$('uniReset').onclick=()=>{
+ $('uniTime').value='';$('uniAttempts').value='1';$('uniNotes').value='';
+ [...$('uniComp').options].forEach(o=>o.selected=false);
+ $('uniOutTime').textContent='—';$('uniOutSide').textContent='—';
+ $('uniResult').textContent='Sin datos';$('uniResult').className='badge neutral';
+ $('uniInterpretation').textContent='Carga el video, revisa la ejecución y registra el tiempo observado para generar un resumen.';
+ state.uniReport='';
+};
+
+updateBerg();updatePoma();updateFunctional();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
